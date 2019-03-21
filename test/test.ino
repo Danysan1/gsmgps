@@ -5,14 +5,18 @@
 #include <SoftwareSerial.h>
 #include <stdio.h>
 
+#define PC_BAUD_RATE 9600
+#define SIM_BAUD_RATE 9600
 #define POWER_PIN 9
 #define GSMSerial Serial3
-//#define NUMERO "+393471840366"
-#define NUMERO "+393470974284"
+#define SMSC "AT+CSCA=?"
+//#define SMSC "AT+CSCA=\"+393770001006\"" // PosteMobile
+#define NUMERO "+393471840366"
+//#define NUMERO "+393470974284"
 
 
 void setup() {
-  Serial.begin(19200);
+  Serial.begin(PC_BAUD_RATE);
   pinMode(POWER_PIN, OUTPUT);
   Serial.println("| Comandi:");
   Serial.println("| 0 --> Spegni");
@@ -44,6 +48,9 @@ void loop() {
 
       case '2': // Check
         inviaStringa("AT");
+        //inviaStringa("AP+CPIN?");
+        inviaStringa("AP+CPIN=7975");
+        //inviaStringa("AP+CPIN?");
         break;
 
       case '3': // Stampa qualità GSM
@@ -108,7 +115,7 @@ void powerOn() {
   Serial.println("| Acceso");
 
   Serial.println("| Connessione...");
-  GSMSerial.begin(19200); // the GPRS/GSM baud rate
+  GSMSerial.begin(SIM_BAUD_RATE); // the GPRS/GSM baud rate
   delay(4000);
   Serial.println("| Connesso (verificare se la connessione funziona con il comando 'AT', dovrebbe rispondere 'OK')");
 }
@@ -146,7 +153,9 @@ void inviaSMS(const char* numero, const char* payload) {
   inviaStringa("AT+CMGF=1");    //Because we want to send the SMS in text mode
   leggiRisposte();
 
-  // TODO usare il numero
+  inviaStringa(SMSC);
+  leggiRisposte();
+
   char cmgs[30];
   snprintf(cmgs, 30, "AT+CMGS=\"%s\"", numero); // AT+CMGS="+393471840366"
   inviaStringa(cmgs);
