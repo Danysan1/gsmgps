@@ -1,28 +1,30 @@
 // https://www.elecrow.com/wiki/index.php?title=SIM808_GPRS/GSM%2BGPS_Shield_v1.1
+// http://wiki.seeedstudio.com/Mini_GSM_GPRS_GPS_Breakout_SIM808/#set-baud-and-enable-charging-function
 // https://learn.adafruit.com/adafruit-fona-808-cellular-plus-gps-breakout/overview
 
 #include <SoftwareSerial.h>
-#include <string.h>
+#include <stdio.h>
 
 #define POWER_PIN 9
-//#define TX_PIN 14
-//#define RX_PIN 15
-//SoftwareSerial GSMSerial(RX_PIN, TX_PIN);
 #define GSMSerial Serial3
+//#define NUMERO "+393471840366"
+#define NUMERO "+393470974284"
 
 
 void setup() {
   Serial.begin(19200);
   pinMode(POWER_PIN, OUTPUT);
-  //pinMode(TX_PIN, OUTPUT);
-  //pinMode(RX_PIN, INPUT);
   Serial.println("| Comandi:");
-  Serial.println("| 1 --> Spegni");
-  Serial.println("| 2 --> Accendi");
-  Serial.println("| 3 --> Check");
+  Serial.println("| 0 --> Spegni");
+  Serial.println("| 1 --> Accendi");
+  Serial.println("| 2 --> Check");
+  Serial.println("| 3 --> Stampa qualità GSM");
   Serial.println("| 4 --> Invia SMS");
-  Serial.println("| 5 --> Stampa posizione GPS");
-  Serial.println("| 6 --> Esegui chiamata");
+  Serial.println("| 5 --> Esegui chiamata");
+  Serial.println("| 6 --> Avvia GPS");
+  Serial.println("| 7 --> Stampa qualità GPS");
+  Serial.println("| 8 --> Stampa posizione GPS");
+  Serial.println("| 9 --> Spegni GPS");
   Serial.println('|');
   delay(1000);
 }
@@ -32,25 +34,41 @@ void loop() {
     char c = (char)Serial.read();
     //Serial.println((int)c);
     switch (c) {
-      case '1':
+      case '0': // Spegni
         powerOff();
         break;
 
-      case '2':
+      case '1': // Accendi
         powerOn();
         break;
 
-      case '3':
+      case '2': // Check
         inviaStringa("AT");
         break;
 
-      case '4':
-        inviaSMS("Ciao mondo");
+      case '3': // Stampa qualità GSM
+        stampaQualitaGSM();
         break;
 
-      case '5':
-      case '6':
+      case '4': // Invia SMS
+        inviaSMS(NUMERO, "Ciao mondo");
+        break;
+
+      case '5': // Chiamata
+        chiamata(NUMERO);
+        break;
+
+      case '6': // Avvia GPS
+        avviaGPS();
+        break;
+
+      case '7': // Stampa qualità GPS
+      case '8': // Stampa posizione GPS
         Serial.println("Non implementato");
+        break;
+
+      case '9':
+        spegniGPS();
         break;
 
       case '\r':
@@ -92,7 +110,7 @@ void powerOn() {
   Serial.println("| Connessione...");
   GSMSerial.begin(19200); // the GPRS/GSM baud rate
   delay(4000);
-  Serial.println("| Connesso (verificare se la connessione funziona con il comando 'AT\r', dovrebbe rispondere 'OK')");
+  Serial.println("| Connesso (verificare se la connessione funziona con il comando 'AT', dovrebbe rispondere 'OK')");
 }
 
 void powerOff() {
@@ -122,13 +140,16 @@ void consumaFineLinea() {
   }
 }
 
-void inviaSMS(const char* payload) {
+void inviaSMS(const char* numero, const char* payload) {
   Serial.println("| Invio SMS...");
 
   inviaStringa("AT+CMGF=1");    //Because we want to send the SMS in text mode
   leggiRisposte();
 
-  inviaStringa("AT+CMGS=\"+393471840366\"");    //Start accepting the text for the message
+  // TODO usare il numero
+  char cmgs[30];
+  snprintf(cmgs, 30, "AT+CMGS=\"%s\"", numero); // AT+CMGS="+393471840366"
+  inviaStringa(cmgs);
   leggiRisposte();
 
   inviaStringa(payload);   //The text for the message
@@ -136,4 +157,30 @@ void inviaSMS(const char* payload) {
   Serial.println();
 
   inviaChar(0x1A);  //Equivalent to sending Ctrl+Z
+}
+
+void chiamata(const char* numero) {
+  // TODO usare il numero
+  GSMSerial.println("ATD+393471840366;");
+}
+
+void avviaGPS() {
+  Serial.println("| Avvio GPS...");
+  //inviaStringa("AT+CGPSPWR=1");
+  GSMSerial.print("AT+CGPSPWR=1\r");
+}
+
+void spegniGPS() {
+  Serial.println("| Spegnimento GPS...");
+  inviaStringa("AT+CGPSPWR=0");
+}
+
+void stampaQualitaGSM() {
+  Serial.println("| Controllo qualità GSM...");
+  inviaStringa("AT+CSQ");
+}
+
+void stampaQualitaGPS() {
+  Serial.println("| Controllo qualità GPS...");
+  inviaStringa("AT+CGPSSTATUS?");
 }
