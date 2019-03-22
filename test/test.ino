@@ -2,7 +2,6 @@
 // http://wiki.seeedstudio.com/Mini_GSM_GPRS_GPS_Breakout_SIM808/#set-baud-and-enable-charging-function
 // https://learn.adafruit.com/adafruit-fona-808-cellular-plus-gps-breakout/overview
 
-#include <SoftwareSerial.h>
 #include <stdio.h>
 
 #define PC_BAUD_RATE 9600
@@ -48,9 +47,6 @@ void loop() {
 
       case '2': // Check
         inviaStringa("AT");
-        //inviaStringa("AP+CPIN?");
-        inviaStringa("AP+CPIN=7975");
-        //inviaStringa("AP+CPIN?");
         break;
 
       case '3': // Stampa qualità GSM
@@ -118,6 +114,10 @@ void powerOn() {
   GSMSerial.begin(SIM_BAUD_RATE); // the GPRS/GSM baud rate
   delay(4000);
   Serial.println("| Connesso (verificare se la connessione funziona con il comando 'AT', dovrebbe rispondere 'OK')");
+  
+  //inviaStringa("AP+CPIN?");
+  //inviaStringa("AP+CPIN=7975");
+  //inviaStringa("AP+CPIN?");
 }
 
 void powerOff() {
@@ -142,8 +142,10 @@ void inviaStringa(const char* payload) {
 }
 
 void consumaFineLinea() {
-  if (Serial.available() && Serial.peek() == '\r') {
-    Serial.read();
+  if (Serial.available()) {
+    int c = Serial.peek();
+    if (c == '\r' || c == '\n')
+      Serial.read();
   }
 }
 
@@ -169,7 +171,8 @@ void inviaSMS(const char* numero, const char* payload) {
 }
 
 void chiamata(const char* numero) {
-  // TODO usare il numero
+  char atd[20];
+  snprintf(atd, 20, "ATD+%s;", numero);
   GSMSerial.println("ATD+393471840366;");
 }
 
