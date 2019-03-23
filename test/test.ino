@@ -4,28 +4,27 @@
 
 #include <stdio.h>
 
-#define PC_BAUD_RATE 9600
-#define SIM_BAUD_RATE 9600
+#define BAUD_RATE 9600
 
 #define POWER_PIN 9
 #define GSMSerial Serial3
 
+#define PIN_SIM 7975
 #define SMSC "AT+CSCA=?" // Lettura SMSC attuale
 //#define SMSC "AT+CSCA=\"+393770001006\"" // SMSC PosteMobile
 
-#define NUMERO "+393471840366"
-//#define NUMERO "+393470974284"
+#define DESTINATARIO "+393471840366"
 
 void setup() {
-  Serial.begin(PC_BAUD_RATE);
+  Serial.begin(BAUD_RATE);
+  GSMSerial.begin(BAUD_RATE);
   pinMode(POWER_PIN, OUTPUT);
   Serial.println("| Comandi:");
   Serial.println("| 0 --> Accendi/Spegni");
-  Serial.println("| 1 --> Connetti");
-  Serial.println("| 2 --> Check");
-  Serial.println("| $ --> Debug verboso");
-  Serial.println("| % --> Controlla stato PIN");
-  Serial.println("| & --> Configura PIN");
+  Serial.println("| 1 --> Check");
+  Serial.println("| 2 --> Imposta debug verboso");
+  Serial.println("| $ --> Controlla stato PIN");
+  Serial.println("| % --> Configura PIN");
   Serial.println("| 3 --> Stampa qualità GSM");
   Serial.println("| 4 --> Invia SMS");
   Serial.println("| 5 --> Esegui chiamata");
@@ -46,23 +45,19 @@ void loop() {
         power();
         break;
 
-      case '1': // Connetti
-        connetti();
-        break;
-
-      case '2': // Check
+      case '1': // Check
         verificaConnessione();
         break;
 
-      case '$': // Debug verboso
+      case '2': // Imposta debug verboso
         debugVerboso();
         break;
 
-      case '%': // Controlla stato PIN
+      case '$': // Controlla stato PIN
         controllaPIN();
         break;
 
-      case '&': // Configua PIN
+      case '%': // Configua PIN
         configuraPIN();
         break;
 
@@ -71,11 +66,11 @@ void loop() {
         break;
 
       case '4': // Invia SMS
-        inviaSMS(NUMERO, "Ciao mondo");
+        inviaSMS(DESTINATARIO, "Ciao mondo");
         break;
 
       case '5': // Chiamata
-        chiamata(NUMERO);
+        chiamata(DESTINATARIO);
         break;
 
       case '6': // Avvia GPS
@@ -121,16 +116,10 @@ void power()
 {
   Serial.println("| Accensione/Spegnimento...");
   digitalWrite(POWER_PIN, LOW);
-  delay(1000);               // wait for 1 second
+  delay(1000);
   digitalWrite(POWER_PIN, HIGH);
-  Serial.println("| Acceso/Spento...");
-}
-
-void connetti() {
-  Serial.println("| Connessione...");
-  GSMSerial.begin(SIM_BAUD_RATE); // the GPRS/GSM baud rate
   delay(4000);
-  Serial.println("| Connesso");
+  Serial.println("| Acceso/Spento...");
 }
 
 void verificaConnessione() {
@@ -141,17 +130,19 @@ void verificaConnessione() {
 void debugVerboso() {
   Serial.println("| Impostazione debug veroboso...");
   inviaStringaLeggiRisposta("AT+CMEE=2");
-  inviaStringaLeggiRisposta("AT+CMEE?");
+  //inviaStringaLeggiRisposta("AT+CMEE?");
 }
 
 void controllaPIN(){
   Serial.println("| Coontrollo stato PIN...");
-  inviaStringaLeggiRisposta("AP+CPIN?\n\r");
+  inviaStringaLeggiRisposta("AP+CPIN?");
   }
 
 void configuraPIN() {
   Serial.println("| Configuarzione PIN...");
-  inviaStringaLeggiRisposta("AP+CPIN=7975");
+  char cpin[15];
+  snprintf(cpin,15,"AP+CPIN=%d",PIN_SIM); // AP+CPIN=7975
+  inviaStringaLeggiRisposta(cpin);
   controllaPIN();
 }
 
@@ -171,7 +162,7 @@ void inviaChar(char payload) {
 void inviaStringa(const char* payload) {
   Serial.print("| INVIO STRINGA: ");
   Serial.print(payload);
-  Serial.println("<CR>");
+  Serial.println("<CR><NL>");
   GSMSerial.println(payload);
 }
 
@@ -208,14 +199,13 @@ void inviaSMS(const char* numero, const char* payload) {
 
 void chiamata(const char* numero) {
   char atd[20];
-  snprintf(atd, 20, "ATD+%s;", numero);
-  GSMSerial.println("ATD+393471840366;");
+  snprintf(atd, 20, "ATD%s;", numero); // ATD+393471840366
+  inviaStringaLeggiRisposta(atd);
 }
 
 void avviaGPS() {
   Serial.println("| Avvio GPS...");
-  //inviaStringa("AT+CGPSPWR=1");
-  GSMSerial.print("AT+CGPSPWR=1\r");
+  inviaStringaLeggiRisposta("AT+CGPSPWR=1");
 }
 
 void spegniGPS() {
@@ -231,4 +221,9 @@ void stampaQualitaGSM() {
 void stampaQualitaGPS() {
   Serial.println("| Controllo qualità GPS...");
   inviaStringaLeggiRisposta("AT+CGPSSTATUS?");
+}
+
+void stampaGPS(){
+  Serial.println("| Stampa posizione GPS...");
+  inviaStringaLeggiRisposta("AT+CGPSINF=0");
 }
