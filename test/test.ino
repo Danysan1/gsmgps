@@ -6,21 +6,26 @@
 
 #define PC_BAUD_RATE 9600
 #define SIM_BAUD_RATE 9600
+
 #define POWER_PIN 9
 #define GSMSerial Serial3
-#define SMSC "AT+CSCA=?"
-//#define SMSC "AT+CSCA=\"+393770001006\"" // PosteMobile
+
+#define SMSC "AT+CSCA=?" // Lettura SMSC attuale
+//#define SMSC "AT+CSCA=\"+393770001006\"" // SMSC PosteMobile
+
 #define NUMERO "+393471840366"
 //#define NUMERO "+393470974284"
-
 
 void setup() {
   Serial.begin(PC_BAUD_RATE);
   pinMode(POWER_PIN, OUTPUT);
   Serial.println("| Comandi:");
-  Serial.println("| 0 --> Spegni");
-  Serial.println("| 1 --> Accendi");
+  Serial.println("| 0 --> Accendi/Spegni");
+  Serial.println("| 1 --> Connetti");
   Serial.println("| 2 --> Check");
+  Serial.println("| $ --> Debug verboso");
+  Serial.println("| % --> Controlla stato PIN");
+  Serial.println("| & --> Configura PIN");
   Serial.println("| 3 --> Stampa qualità GSM");
   Serial.println("| 4 --> Invia SMS");
   Serial.println("| 5 --> Esegui chiamata");
@@ -37,16 +42,28 @@ void loop() {
     char c = (char)Serial.read();
     //Serial.println((int)c);
     switch (c) {
-      case '0': // Spegni
-        powerOff();
+      case '0': // Accendi/Spegni
+        power();
         break;
 
-      case '1': // Accendi
-        powerOn();
+      case '1': // Connetti
+        connetti();
         break;
 
       case '2': // Check
-        inviaStringa("AT");
+        verificaConnessione();
+        break;
+
+      case '$': // Debug verboso
+        debugVerboso();
+        break;
+
+      case '%': // Controlla stato PIN
+        controllaPIN();
+        break;
+
+      case '&': // Configua PIN
+        configuraPIN();
         break;
 
       case '3': // Stampa qualità GSM
@@ -70,7 +87,7 @@ void loop() {
         Serial.println("Non implementato");
         break;
 
-      case '9':
+      case '9': // Spegni GPS
         spegniGPS();
         break;
 
@@ -102,24 +119,40 @@ void stampaChar(char c) {
 
 void power()
 {
+  Serial.println("| Accensione/Spegnimento...");
   digitalWrite(POWER_PIN, LOW);
   delay(1000);               // wait for 1 second
   digitalWrite(POWER_PIN, HIGH);
+  Serial.println("| Acceso/Spento...");
 }
 
-void powerOn() {
-  Serial.println("| Accensione...");
-  power();
-  Serial.println("| Acceso");
-
+void connetti() {
   Serial.println("| Connessione...");
   GSMSerial.begin(SIM_BAUD_RATE); // the GPRS/GSM baud rate
   delay(4000);
-  Serial.println("| Connesso (verificare se la connessione funziona con il comando 'AT', dovrebbe rispondere 'OK')");
+  Serial.println("| Connesso");
+}
 
-  //inviaStringa("AP+CPIN?");
-  //inviaStringa("AP+CPIN=7975");
-  //inviaStringa("AP+CPIN?");
+void verificaConnessione() {
+  Serial.println("| Verifica della connessione con il comando 'AT', dovrebbe rispondere 'OK'...");
+  inviaStringaLeggiRisposta("AT");
+}
+
+void debugVerboso() {
+  Serial.println("| Impostazione debug veroboso...");
+  inviaStringaLeggiRisposta("AT+CMEE=2");
+  inviaStringaLeggiRisposta("AT+CMEE?");
+}
+
+void controllaPIN(){
+  Serial.println("| Coontrollo stato PIN...");
+  inviaStringaLeggiRisposta("AP+CPIN?\n\r");
+  }
+
+void configuraPIN() {
+  Serial.println("| Configuarzione PIN...");
+  inviaStringaLeggiRisposta("AP+CPIN=7975");
+  controllaPIN();
 }
 
 void powerOff() {
@@ -140,7 +173,13 @@ void inviaStringa(const char* payload) {
   Serial.print(payload);
   Serial.println("<CR>");
   GSMSerial.println(payload);
+}
+
+void inviaStringaLeggiRisposta(const char* payload) {
+  inviaStringa(payload);
   delay(100);
+  leggiRisposte();
+  Serial.println();
 }
 
 void consumaFineLinea() {
@@ -154,20 +193,15 @@ void consumaFineLinea() {
 void inviaSMS(const char* numero, const char* payload) {
   Serial.println("| Invio SMS...");
 
-  inviaStringa("AT+CMGF=1");    //Because we want to send the SMS in text mode
-  leggiRisposte();
+  inviaStringaLeggiRisposta("AT+CMGF=1");    //Because we want to send the SMS in text mode
 
-  inviaStringa(SMSC);
-  leggiRisposte();
+  inviaStringaLeggiRisposta(SMSC);
 
   char cmgs[30];
   snprintf(cmgs, 30, "AT+CMGS=\"%s\"", numero); // AT+CMGS="+393471840366"
-  inviaStringa(cmgs);
-  leggiRisposte();
+  inviaStringaLeggiRisposta(cmgs);
 
-  inviaStringa(payload);   //The text for the message
-  leggiRisposte();
-  Serial.println();
+  inviaStringaLeggiRisposta(payload);   //The text for the message
 
   inviaChar(0x1A);  //Equivalent to sending Ctrl+Z
 }
@@ -186,15 +220,15 @@ void avviaGPS() {
 
 void spegniGPS() {
   Serial.println("| Spegnimento GPS...");
-  inviaStringa("AT+CGPSPWR=0");
+  inviaStringaLeggiRisposta("AT+CGPSPWR=0");
 }
 
 void stampaQualitaGSM() {
   Serial.println("| Controllo qualità GSM...");
-  inviaStringa("AT+CSQ");
+  inviaStringaLeggiRisposta("AT+CSQ");
 }
 
 void stampaQualitaGPS() {
   Serial.println("| Controllo qualità GPS...");
-  inviaStringa("AT+CGPSSTATUS?");
+  inviaStringaLeggiRisposta("AT+CGPSSTATUS?");
 }
