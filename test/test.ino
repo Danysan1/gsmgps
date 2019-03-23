@@ -133,15 +133,15 @@ void debugVerboso() {
   //inviaStringaLeggiRisposta("AT+CMEE?");
 }
 
-void controllaPIN(){
+void controllaPIN() {
   Serial.println("| Coontrollo stato PIN...");
   inviaStringaLeggiRisposta("AP+CPIN?");
-  }
+}
 
 void configuraPIN() {
   Serial.println("| Configuarzione PIN...");
   char cpin[15];
-  snprintf(cpin,15,"AP+CPIN=%d",PIN_SIM); // AP+CPIN=7975
+  snprintf(cpin, 15, "AP+CPIN=%d", PIN_SIM); // AP+CPIN=7975
   inviaStringaLeggiRisposta(cpin);
   controllaPIN();
 }
@@ -223,7 +223,7 @@ void stampaQualitaGPS() {
   inviaStringaLeggiRisposta("AT+CGPSSTATUS?");
 }
 
-void stampaGPS(){
+void stampaGPS() {
   Serial.println("| Stampa posizione GPS...");
   inviaStringaLeggiRisposta("AT+CGPSINF=0");
 }
