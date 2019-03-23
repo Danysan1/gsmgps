@@ -75,6 +75,8 @@ void loop() {
         break;
 
       case '\r':
+      case '\n':
+        Serial.println('|');
         break;
 
       default:
@@ -114,7 +116,7 @@ void powerOn() {
   GSMSerial.begin(SIM_BAUD_RATE); // the GPRS/GSM baud rate
   delay(4000);
   Serial.println("| Connesso (verificare se la connessione funziona con il comando 'AT', dovrebbe rispondere 'OK')");
-  
+
   //inviaStringa("AP+CPIN?");
   //inviaStringa("AP+CPIN=7975");
   //inviaStringa("AP+CPIN?");
