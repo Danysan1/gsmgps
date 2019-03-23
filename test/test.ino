@@ -1,6 +1,7 @@
 // https://www.elecrow.com/wiki/index.php?title=SIM808_GPRS/GSM%2BGPS_Shield_v1.1
 // http://wiki.seeedstudio.com/Mini_GSM_GPRS_GPS_Breakout_SIM808/#set-baud-and-enable-charging-function
 // https://learn.adafruit.com/adafruit-fona-808-cellular-plus-gps-breakout/overview
+// https://m2msupport.net/m2msupport/sms-at-commands/
 
 #include <stdio.h>
 
