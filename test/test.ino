@@ -21,7 +21,7 @@ void setup() {
   pinMode(POWER_PIN, OUTPUT);
   Serial.println("| Comandi:");
   Serial.println("| 0 --> Accendi/Spegni");
-  Serial.println("| 1 --> Check");
+  Serial.println("| 1 --> Verifica connessione");
   Serial.println("| 2 --> Imposta debug verboso");
   Serial.println("| $ --> Controlla stato PIN");
   Serial.println("| % --> Configura PIN");
@@ -45,7 +45,7 @@ void loop() {
         power();
         break;
 
-      case '1': // Check
+      case '1': // Verifica connessione
         verificaConnessione();
         break;
 
