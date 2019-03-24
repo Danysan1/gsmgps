@@ -102,10 +102,10 @@ void loop() {
     }
   }
 
-  leggiRisposte();
+  stampaRisposte();
 }
 
-void leggiRisposte() {
+void stampaRisposte() {
   while (GSMSerial.available())
     Serial.print((char)GSMSerial.read());
 }
@@ -129,25 +129,25 @@ void power()
 
 void verificaConnessione() {
   Serial.println("| Verifica della connessione con il comando 'AT', dovrebbe rispondere 'OK'...");
-  inviaStringaLeggiRisposta("AT");
+  inviaStringaStampaRisposte("AT");
 }
 
 void debugVerboso() {
   Serial.println("| Impostazione debug veroboso...");
-  inviaStringaLeggiRisposta("AT+CMEE=2");
-  //inviaStringaLeggiRisposta("AT+CMEE?");
+  inviaStringaStampaRisposte("AT+CMEE=2");
+  //inviaStringaStampaRisposte("AT+CMEE?");
 }
 
 void controllaPIN() {
   Serial.println("| Coontrollo stato PIN...");
-  inviaStringaLeggiRisposta("AP+CPIN?");
+  inviaStringaStampaRisposte("AP+CPIN?");
 }
 
 void configuraPIN() {
   Serial.println("| Configuarzione PIN...");
   char cpin[15];
   snprintf(cpin, 15, "AP+CPIN=%d", PIN_SIM); // AP+CPIN=7975
-  inviaStringaLeggiRisposta(cpin);
+  inviaStringaStampaRisposte(cpin);
   controllaPIN();
 }
 
@@ -171,10 +171,10 @@ void inviaStringa(const char* payload) {
   GSMSerial.println(payload);
 }
 
-void inviaStringaLeggiRisposta(const char* payload) {
+void inviaStringaStampaRisposte(const char* payload) {
   inviaStringa(payload);
   delay(100);
-  leggiRisposte();
+  stampaRisposte();
   Serial.println();
 }
 
@@ -189,15 +189,15 @@ void consumaFineLinea() {
 void inviaSMS(const char* numero, const char* payload) {
   Serial.println("| Invio SMS...");
 
-  inviaStringaLeggiRisposta("AT+CMGF=1");    //Because we want to send the SMS in text mode
+  inviaStringaStampaRisposte("AT+CMGF=1");    //Because we want to send the SMS in text mode
 
-  inviaStringaLeggiRisposta(SMSC);
+  inviaStringaStampaRisposte(SMSC);
 
   char cmgs[30];
   snprintf(cmgs, 30, "AT+CMGS=\"%s\"", numero); // AT+CMGS="+393471840366"
-  inviaStringaLeggiRisposta(cmgs);
+  inviaStringaStampaRisposte(cmgs);
 
-  inviaStringaLeggiRisposta(payload);   //The text for the message
+  inviaStringaStampaRisposte(payload);   //The text for the message
 
   inviaChar(0x1A);  //Equivalent to sending Ctrl+Z
 }
@@ -205,32 +205,32 @@ void inviaSMS(const char* numero, const char* payload) {
 void chiamata(const char* numero) {
   char atd[20];
   snprintf(atd, 20, "ATD%s;", numero); // ATD+393471840366
-  inviaStringaLeggiRisposta(atd);
+  inviaStringaStampaRisposte(atd);
 }
 
 void avviaGPS() {
   Serial.println("| Avvio GPS...");
-  inviaStringaLeggiRisposta("AT+CGPSPWR=1");
+  inviaStringaStampaRisposte("AT+CGPSPWR=1");
 }
 
 void spegniGPS() {
   Serial.println("| Spegnimento GPS...");
-  inviaStringaLeggiRisposta("AT+CGPSPWR=0");
+  inviaStringaStampaRisposte("AT+CGPSPWR=0");
 }
 
 void stampaQualitaGSM() {
   Serial.println("| Controllo qualità GSM...");
-  inviaStringaLeggiRisposta("AT+CSQ");
+  inviaStringaStampaRisposte("AT+CSQ");
 }
 
 void stampaQualitaGPS() {
   Serial.println("| Controllo qualità GPS...");
-  inviaStringaLeggiRisposta("AT+CGPSSTATUS?");
+  inviaStringaStampaRisposte("AT+CGPSSTATUS?");
 }
 
 void stampaGPS() {
   Serial.println("| Stampa posizione GPS...");
-  inviaStringaLeggiRisposta("AT+CGPSINF=0");
+  inviaStringaStampaRisposte("AT+CGPSINF=0");
 }
 
 struct posizione getPosizione() {
