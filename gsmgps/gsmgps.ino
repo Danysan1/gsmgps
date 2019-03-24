@@ -2,15 +2,15 @@
 
 #include "DispositivoGPS.h"
 #include "DispositivoGSM.h"
-#include "SIM808GPS.h"
-#include "SIM808GSM.h"
+#include "SIM808.h"
 
 DispositivoGPS* gps;
 DispositivoGSM* gsm;
 
 void setup() {
-  gsm = new SIM808GSM();
-  gps = new SIM808GPS();
+  SIM808* s = new SIM808();
+  gsm = s;
+  gps = s;
 }
 
 void loop() {
@@ -18,8 +18,8 @@ void loop() {
 
 }
 
-void inviaGPS(){
+void inviaGPS() {
   struct posizione pos = gps->getPosizione();
-  char* testo = "TODO";
+  const char* testo = "TODO";
   enum risultatoInvioTesto ris = gsm->inviaTesto(testo);
-  }
+}

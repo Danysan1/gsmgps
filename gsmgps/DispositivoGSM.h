@@ -11,7 +11,7 @@ enum risultatoInvioTesto {
 
 class DispositivoGSM {
   public:
-    virtual enum risultatoInvioTesto inviaTesto(char* testo) = 0;
+    virtual enum risultatoInvioTesto inviaTesto(const char* testo) = 0;
 };
 
 

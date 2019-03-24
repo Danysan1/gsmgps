@@ -16,6 +16,10 @@
 
 #define DESTINATARIO "+393471840366"
 
+struct posizione {
+  double latitudine, longitudine;
+};
+
 void setup() {
   Serial.begin(BAUD_RATE);
   GSMSerial.begin(BAUD_RATE);
@@ -227,4 +231,24 @@ void stampaQualitaGPS() {
 void stampaGPS() {
   Serial.println("| Stampa posizione GPS...");
   inviaStringaLeggiRisposta("AT+CGPSINF=0");
+}
+
+struct posizione getPosizione() {
+  inviaStringa("AT+CGPSINF=0");
+  
+  const char* res;
+  String s;
+  //do {
+  //  s = GSMSerial.readStringUntil('\r');
+  //} while (s.compareTo("AT+CGPSINF=0") != 0);
+  //res = GSMSerial.readStringUntil('\r').c_str();
+  res = "+CGPSINF: 0,2234.931817,11357.122485, 92.461185,20141031041141.000, 88,12,0.000000,0.000000"; // test, riumuovere quando funzionerà la board
+
+  struct posizione p;
+  // https://cdn-shop.adafruit.com/datasheets/SIM808_GPS_Application_Note_V1.00.pdf#page=8
+  // https://m2msupport.net/m2msupport/atcgpsinf-get-current-gps-location-info/
+  // http://wiki.seeedstudio.com/Mini_GSM_GPRS_GPS_Breakout_SIM808/#get-location-with-gps
+  sscanf(res, "+CGPSINF: %f,%f,%n",&(p.latitudine),&(p.longitudine));
+
+  return p;
 }
