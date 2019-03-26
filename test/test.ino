@@ -4,6 +4,7 @@
 // https://m2msupport.net/m2msupport/sms-at-commands/
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define BAUD_RATE 9600
 
@@ -14,7 +15,8 @@
 #define SMSC "AT+CSCA=?" // Lettura SMSC attuale
 //#define SMSC "AT+CSCA=\"+393770001006\"" // SMSC PosteMobile
 
-#define DESTINATARIO "+393471840366"
+//#define DESTINATARIO "+393471840366"
+#define DESTINATARIO "+393490507236"
 
 struct posizione {
   double latitudine, longitudine;
@@ -34,9 +36,10 @@ void setup() {
   Serial.println("| 4 --> Invia SMS");
   Serial.println("| 5 --> Esegui chiamata");
   Serial.println("| 6 --> Avvia GPS");
-  Serial.println("| 7 --> Stampa qualità GPS");
-  Serial.println("| 8 --> Stampa posizione GPS");
-  Serial.println("| 9 --> Spegni GPS");
+  Serial.println("| = --> Stampa qualità GPS");
+  Serial.println("| 7 --> Invia posizione GPS");
+  Serial.println("| ? --> Stampa posizione GPS");
+  Serial.println("| 8 --> Spegni GPS");
   Serial.println('|');
   delay(1000);
 }
@@ -82,12 +85,19 @@ void loop() {
         avviaGPS();
         break;
 
-      case '7': // Stampa qualità GPS
-      case '8': // Stampa posizione GPS
-        Serial.println("Non implementato");
+      case '=': // Stampa qualità GPS
+        stampaQualitaGPS();
         break;
 
-      case '9': // Spegni GPS
+      case '7': // Invia posizione GPS
+        inviaPosizione(DESTINATARIO);
+        break;
+
+      case '?': // Stampa posizione GPS
+        stampaGPS();
+        break;
+
+      case '8': // Spegni GPS
         spegniGPS();
         break;
 
@@ -145,8 +155,9 @@ void controllaPIN() {
 
 void configuraPIN() {
   Serial.println("| Configuarzione PIN...");
-  char cpin[15];
-  snprintf(cpin, 15, "AP+CPIN=%d", PIN_SIM); // AP+CPIN=7975
+#define CPIN_DIM 15
+  char cpin[CPIN_DIM];
+  snprintf(cpin, CPIN_DIM, "AP+CPIN=%d", PIN_SIM); // AP+CPIN=7975
   inviaStringaStampaRisposte(cpin);
   controllaPIN();
 }
@@ -193,8 +204,9 @@ void inviaSMS(const char* numero, const char* payload) {
 
   inviaStringaStampaRisposte(SMSC);
 
-  char cmgs[30];
-  snprintf(cmgs, 30, "AT+CMGS=\"%s\"", numero); // AT+CMGS="+393471840366"
+#define CMGS_DIM 30
+  char cmgs[CMGS_DIM];
+  snprintf(cmgs, CMGS_DIM, "AT+CMGS=\"%s\"", numero); // AT+CMGS="+393471840366"
   inviaStringaStampaRisposte(cmgs);
 
   inviaStringaStampaRisposte(payload);   //The text for the message
@@ -203,8 +215,9 @@ void inviaSMS(const char* numero, const char* payload) {
 }
 
 void chiamata(const char* numero) {
-  char atd[20];
-  snprintf(atd, 20, "ATD%s;", numero); // ATD+393471840366
+#define ATD_DIM 20
+  char atd[ATD_DIM];
+  snprintf(atd, ATD_DIM, "ATD%s;", numero); // ATD+393471840366
   inviaStringaStampaRisposte(atd);
 }
 
@@ -233,22 +246,49 @@ void stampaGPS() {
   inviaStringaStampaRisposte("AT+CGPSINF=0");
 }
 
-struct posizione getPosizione() {
+// return successo
+boolean getPosizione(struct posizione* p) {
+  Serial.println("| Lettura posizione...");
   inviaStringa("AT+CGPSINF=0");
-  
+  delay(100);
+
   const char* res;
   String s;
-  //do {
-  //  s = GSMSerial.readStringUntil('\r');
-  //} while (s.compareTo("AT+CGPSINF=0") != 0);
-  //res = GSMSerial.readStringUntil('\r').c_str();
-  res = "+CGPSINF: 0,2234.931817,11357.122485, 92.461185,20141031041141.000, 88,12,0.000000,0.000000"; // test, riumuovere quando funzionerà la board
+  do {
+    s = GSMSerial.readStringUntil('\r');
+    s.trim();
+    Serial.println(s);
+  } while (!s.startsWith("+CGPSINF:"));
+  res = s.c_str();
+  //res = "+CGPSINF: 0,2234.931817,11357.122485, 92.461185,20141031041141.000, 88,12,0.000000,0.000000"; // test, riumuovere quando funzionerà la board
 
-  struct posizione p;
   // https://cdn-shop.adafruit.com/datasheets/SIM808_GPS_Application_Note_V1.00.pdf#page=8
   // https://m2msupport.net/m2msupport/atcgpsinf-get-current-gps-location-info/
   // http://wiki.seeedstudio.com/Mini_GSM_GPRS_GPS_Breakout_SIM808/#get-location-with-gps
-  sscanf(res, "+CGPSINF: %f,%f,%n",&(p.latitudine),&(p.longitudine));
+  char lat[12], lon[12];
+  boolean ok = 2 == sscanf(res, "+CGPSINF: %*d,%11[^,],%11[^,],%*s", &lat, &lon);
+  if (ok) {
+    //Serial.println(lat);
+    //Serial.println(lon);
+    p->latitudine = atof(lat) / 100;
+    p->longitudine = atof(lon) / 100;
+    Serial.println("| Posizione letta");
+  } else {
+    p->latitudine = 0;
+    p->longitudine = 0;
+  }
+  return ok;
+}
 
-  return p;
+void inviaPosizione(const char* numero) {
+  struct posizione p;
+  Serial.println("Invio posizione...");
+  char lat[12], lon[12], str[40];
+  if (getPosizione(&p)) {
+    dtostrf(p.latitudine, 11, 8, lat);
+    dtostrf(p.longitudine, 11, 8, lon);
+    //snprintf(str, 40, "LAT %s - LON %s", lat, lon);
+    snprintf(str, 40, "%s,%s", lat, lon);
+    inviaSMS(DESTINATARIO, str);
+  }
 }
