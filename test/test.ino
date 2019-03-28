@@ -1,17 +1,36 @@
+// Gestione SIM808
+//
+// Documentazione shield:
 // https://www.elecrow.com/wiki/index.php?title=SIM808_GPRS/GSM%2BGPS_Shield_v1.1
+//
+// Connessione:
+// ###### TX         RX ########### TX3       RX ##########
+// #    #---------------#         #--------------#        #
+// # PC # USB    Serial # Arduino # Serial3      # SIM808 #
+// #    #---------------#         #--------------#        #
+// ###### RX         TX ########### RX3       TX ##########
+//
+// Comunicazione Arduino-SIM808: Protocollo M2M AT:
+// Comunicazione seriale basata su comandi testuali che iniziano con AT
+// https://www.elecrow.com/wiki/index.php?title=SIM808_GPRS/GSM%2BGPS_Shield_v1.1#Set_Baud_and_Enable_Charging_Function
+// https://doc.qt.io/archives/qtextended4.4/atcommands.html
+// https://github.com/SeeedDocument/Mini-GSM-GPRS-GPS-Breakout-SIM808/raw/master/res/SIM800_ATCommand_Manual_V1.02.pdf
 // http://wiki.seeedstudio.com/Mini_GSM_GPRS_GPS_Breakout_SIM808/#set-baud-and-enable-charging-function
-// https://learn.adafruit.com/adafruit-fona-808-cellular-plus-gps-breakout/overview
 // https://m2msupport.net/m2msupport/sms-at-commands/
+//
+// Esiste una libreria che si occupa di tutto questo, l'ho testata nello sketch AllFunctions ma non l'ho usata qui
+// https://learn.adafruit.com/adafruit-fona-808-cellular-plus-gps-breakout/overview
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #define BAUD_RATE 9600
 
-#define POWER_PIN 9
-#define GSMSerial Serial3
+#define POWER_PIN 9 // Numero del pin per l'accensione/spegnimento della shield
+#define GSMSerial Serial3 // Seriale usata per comunicare con la shield
 
-#define PIN_SIM 7975
+#define PIN_SIM 7975 // Pin della sim
+
 #define SMSC "AT+CSCA=?" // Lettura SMSC attuale
 //#define SMSC "AT+CSCA=\"+393770001006\"" // SMSC PosteMobile
 
@@ -115,11 +134,13 @@ void loop() {
   stampaRisposte();
 }
 
+// Leggi quello che manda la shield e stampalo nella seriale del PC
 void stampaRisposte() {
   while (GSMSerial.available())
     Serial.print((char)GSMSerial.read());
 }
 
+// Invia un carattere nella seriale del PC
 void stampaChar(char c) {
   Serial.print(c);
   Serial.print(" (ASCII ");
@@ -127,6 +148,39 @@ void stampaChar(char c) {
   Serial.println(')');
 }
 
+// Invia un carattere nella seriale della shield
+void inviaChar(char payload) {
+  Serial.print("| INVIO CHAR: ");
+  stampaChar(payload);
+  GSMSerial.print(payload);
+}
+
+// Invia una stringa nella seriale della shield
+void inviaStringa(const char* payload) {
+  Serial.print("| INVIO STRINGA: ");
+  Serial.print(payload);
+  Serial.println("<CR><NL>");
+  GSMSerial.println(payload);
+}
+
+// Invia una stringa nella seriale della shield, leggi la risposta e inviala nella seriale del PC
+void inviaStringaStampaRisposte(const char* payload) {
+  inviaStringa(payload);
+  delay(100);
+  stampaRisposte();
+  Serial.println();
+}
+
+// Consuma i caratteri di fine linea dalla seriale del PC
+void consumaFineLinea() {
+  if (Serial.available()) {
+    int c = Serial.peek();
+    if (c == '\r' || c == '\n')
+      Serial.read();
+  }
+}
+
+// Accendi o spegni la shield
 void power()
 {
   Serial.println("| Accensione/Spegnimento...");
@@ -137,116 +191,101 @@ void power()
   Serial.println("| Acceso/Spento...");
 }
 
+// Verifica se la connessione fra Arduino e shield funziona
 void verificaConnessione() {
   Serial.println("| Verifica della connessione con il comando 'AT', dovrebbe rispondere 'OK'...");
   inviaStringaStampaRisposte("AT");
 }
 
+// Indica alla shield di rispondere verbosamente ai comandi
 void debugVerboso() {
   Serial.println("| Impostazione debug veroboso...");
   inviaStringaStampaRisposte("AT+CMEE=2");
   //inviaStringaStampaRisposte("AT+CMEE?");
 }
 
+// Verifica se il pin è inserito, non inserito o non necessario
 void controllaPIN() {
   Serial.println("| Coontrollo stato PIN...");
   inviaStringaStampaRisposte("AP+CPIN?");
 }
 
+// Inserisci il pin
 void configuraPIN() {
   Serial.println("| Configuarzione PIN...");
 #define CPIN_DIM 15
   char cpin[CPIN_DIM];
-  snprintf(cpin, CPIN_DIM, "AP+CPIN=%d", PIN_SIM); // AP+CPIN=7975
+  snprintf(cpin, CPIN_DIM, "AP+CPIN=%d", PIN_SIM); // es: AP+CPIN=7975
   inviaStringaStampaRisposte(cpin);
   controllaPIN();
 }
 
-void powerOff() {
-  Serial.println("| Spegnimento...");
-  power();
-  delay(2000);
-  Serial.println("| Spento");
-}
-
-void inviaChar(char payload) {
-  Serial.print("| INVIO CHAR: ");
-  stampaChar(payload);
-  GSMSerial.print(payload);
-}
-
-void inviaStringa(const char* payload) {
-  Serial.print("| INVIO STRINGA: ");
-  Serial.print(payload);
-  Serial.println("<CR><NL>");
-  GSMSerial.println(payload);
-}
-
-void inviaStringaStampaRisposte(const char* payload) {
-  inviaStringa(payload);
-  delay(100);
-  stampaRisposte();
-  Serial.println();
-}
-
-void consumaFineLinea() {
-  if (Serial.available()) {
-    int c = Serial.peek();
-    if (c == '\r' || c == '\n')
-      Serial.read();
-  }
-}
-
+// Invia un SMS con la shield
 void inviaSMS(const char* numero, const char* payload) {
+  // Protocollo:
+  // AT+CMGF=1 (abilita la modalità testuale)
+  // AT+CSCA=<NUMERO> (opzionale, <NUMERO> è il SMSC dell'operatore)
+  // AT+CMGS="<NUMERO>"<TESTO><EOF> (<NUMERO> è il numero del destinatario, <EOF> è End Of File, carattere ASCII 0x1A)
+
   Serial.println("| Invio SMS...");
 
-  inviaStringaStampaRisposte("AT+CMGF=1");    //Because we want to send the SMS in text mode
+  inviaStringaStampaRisposte("AT+CMGF=1");
 
   inviaStringaStampaRisposte(SMSC);
 
 #define CMGS_DIM 30
   char cmgs[CMGS_DIM];
-  snprintf(cmgs, CMGS_DIM, "AT+CMGS=\"%s\"", numero); // AT+CMGS="+393471840366"
+  snprintf(cmgs, CMGS_DIM, "AT+CMGS=\"%s\"", numero); // es: AT+CMGS="+391234567890"
   inviaStringaStampaRisposte(cmgs);
 
-  inviaStringaStampaRisposte(payload);   //The text for the message
+  inviaStringaStampaRisposte(payload);
 
-  inviaChar(0x1A);  //Equivalent to sending Ctrl+Z
+  inviaChar(0x1A); // EOF
 }
 
+// Chiamata vocale, usando il jack audio della shield
 void chiamata(const char* numero) {
+  // Protocollo:
+  // ATD<NUMERO> (<NUMERO> è il numero del destinatario)
+
 #define ATD_DIM 20
   char atd[ATD_DIM];
-  snprintf(atd, ATD_DIM, "ATD%s;", numero); // ATD+393471840366
+  snprintf(atd, ATD_DIM, "ATD%s;", numero); // es: ATD+391234567890
   inviaStringaStampaRisposte(atd);
 }
 
+// Avvia il GPS
 void avviaGPS() {
   Serial.println("| Avvio GPS...");
   inviaStringaStampaRisposte("AT+CGPSPWR=1");
 }
 
+// Spegni il GPS
 void spegniGPS() {
   Serial.println("| Spegnimento GPS...");
   inviaStringaStampaRisposte("AT+CGPSPWR=0");
 }
 
+// Verifica la qualità della connessione alla rete GSM
 void stampaQualitaGSM() {
   Serial.println("| Controllo qualità GSM...");
   inviaStringaStampaRisposte("AT+CSQ");
 }
 
+// Verifica se il GPS ha ottenuto la geolocalizzazione e la precisione
 void stampaQualitaGPS() {
   Serial.println("| Controllo qualità GPS...");
   inviaStringaStampaRisposte("AT+CGPSSTATUS?");
 }
 
+// Stampa la posizione ottenuta dal GPS
 void stampaGPS() {
   Serial.println("| Stampa posizione GPS...");
   inviaStringaStampaRisposte("AT+CGPSINF=0");
 }
 
-// return successo
+// Ottieni la posizione come struct posizione
+// return successo?
 boolean getPosizione(struct posizione* p) {
   Serial.println("| Lettura posizione...");
   inviaStringa("AT+CGPSINF=0");
@@ -280,6 +319,7 @@ boolean getPosizione(struct posizione* p) {
   return ok;
 }
 
+// Invia via SMS la posizione GPS
 void inviaPosizione(const char* numero) {
   struct posizione p;
   Serial.println("Invio posizione...");
