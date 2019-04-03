@@ -50,12 +50,13 @@ void setup() {
   Serial.println("| % --> Configura PIN");
   Serial.println("| 3 --> Stampa qualità GSM");
   Serial.println("| 4 --> Invia SMS");
-  Serial.println("| 5 --> Esegui chiamata");
-  Serial.println("| 6 --> Avvia GPS");
+  Serial.println("| 5 --> Leggi SMS");
+  Serial.println("| 6 --> Esegui chiamata");
+  Serial.println("| 7 --> Avvia GPS");
   Serial.println("| = --> Stampa qualità GPS");
-  Serial.println("| 7 --> Invia posizione GPS");
+  Serial.println("| 8 --> Invia posizione GPS");
   Serial.println("| ? --> Stampa posizione GPS");
-  Serial.println("| 8 --> Spegni GPS");
+  Serial.println("| 9 --> Spegni GPS");
   Serial.println('|');
   delay(1000);
 }
@@ -93,11 +94,15 @@ void loop() {
         inviaSMS(DESTINATARIO, "Ciao mondo");
         break;
 
-      case '5': // Chiamata
+      case '5': // Leggi SMS
+        leggiSMS();
+        break;
+
+      case '6': // Chiamata
         chiamata(DESTINATARIO);
         break;
 
-      case '6': // Avvia GPS
+      case '7': // Avvia GPS
         avviaGPS();
         break;
 
@@ -105,7 +110,7 @@ void loop() {
         stampaQualitaGPS();
         break;
 
-      case '7': // Invia posizione GPS
+      case '8': // Invia posizione GPS
         inviaPosizione(DESTINATARIO);
         break;
 
@@ -113,7 +118,7 @@ void loop() {
         stampaGPS();
         break;
 
-      case '8': // Spegni GPS
+      case '9': // Spegni GPS
         spegniGPS();
         break;
 
@@ -236,6 +241,18 @@ void inviaSMS(const char* numero, const char* payload) {
   inviaStringaStampaRisposte(payload);
 
   inviaChar(0x1A); // EOF
+}
+
+// Leggi un SMS
+void leggiSMS(){
+  // Protocollo:
+  // AT+CMGF=1
+  // AT+CNMI=1,2,0,0,0
+  // AT+CMGL="REC UNREAD"
+  // AT+CMGR=3
+
+  inviaStringaStampaRisposte("AT+CMGF=1");
+  inviaStringaStampaRisposte("AT+CNMI=1,2,0,0,0");
 }
 
 // Chiamata vocale, usando il jack audio della shield
