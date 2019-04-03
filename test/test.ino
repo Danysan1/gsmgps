@@ -245,9 +245,14 @@ void inviaSMS(const char* numero, const char* payload) {
 
 // Leggi un SMS
 void leggiSMS(){
+  // https://www.developershome.com/sms/readSmsByAtCommands.asp
+  // https://www.developershome.com/sms/cmgrCommand.asp
+  // https://www.developershome.com/sms/cmgrCommand.asp
   // Protocollo:
   // AT+CMGF=1
+  // e poi...
   // AT+CNMI=1,2,0,0,0
+  // ...per leggerli automaticamente in push, oppure...
   // AT+CMGL="REC UNREAD"
   // AT+CMGR=3
 
