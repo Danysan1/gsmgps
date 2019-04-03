@@ -31,9 +31,6 @@
 
 #define PIN_SIM 7975 // Pin della sim
 
-#define SMSC "AT+CSCA=?" // Lettura SMSC attuale
-//#define SMSC "AT+CSCA=\"+393770001006\"" // SMSC PosteMobile
-
 //#define DESTINATARIO "+393471840366"
 #define DESTINATARIO "+393490507236"
 
@@ -231,8 +228,6 @@ void inviaSMS(const char* numero, const char* payload) {
 
   inviaStringaStampaRisposte("AT+CMGF=1");
 
-  inviaStringaStampaRisposte(SMSC);
-
 #define CMGS_DIM 30
   char cmgs[CMGS_DIM];
   snprintf(cmgs, CMGS_DIM, "AT+CMGS=\"%s\"", numero); // es: AT+CMGS="+391234567890"
@@ -322,7 +317,7 @@ boolean getPosizione(struct posizione* p) {
 // Invia via SMS la posizione GPS
 void inviaPosizione(const char* numero) {
   struct posizione p;
-  Serial.println("Invio posizione...");
+  Serial.println("| Invio posizione...");
   char lat[12], lon[12], str[40];
   if (getPosizione(&p)) {
     dtostrf(p.latitudine, 11, 8, lat);
