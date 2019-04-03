@@ -19,6 +19,7 @@
 // https://m2msupport.net/m2msupport/sms-at-commands/
 //
 // Esiste una libreria che si occupa di tutto questo, l'ho testata nello sketch AllFunctions ma non l'ho usata qui
+// https://github.com/adafruit/Adafruit_FONA
 // https://learn.adafruit.com/adafruit-fona-808-cellular-plus-gps-breakout/overview
 
 #include <stdio.h>
@@ -246,7 +247,6 @@ void inviaSMS(const char* numero, const char* payload) {
 // Leggi un SMS
 void leggiSMS(){
   // https://www.developershome.com/sms/readSmsByAtCommands.asp
-  // https://www.developershome.com/sms/cmgrCommand.asp
   // https://www.developershome.com/sms/cmgrCommand.asp
   // Protocollo:
   // AT+CMGF=1
