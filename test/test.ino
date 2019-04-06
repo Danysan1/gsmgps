@@ -40,7 +40,7 @@ struct posizione {
 };
 
 struct sms {
-#define SMS_NUMERO_DIM 15
+#define SMS_NUMERO_DIM 16
 #define SMS_PAYLOAD_DIM 160
   char numero[SMS_NUMERO_DIM], payload[SMS_PAYLOAD_DIM];
 };
@@ -316,6 +316,7 @@ unsigned int leggiSMS(struct sms *messaggi, unsigned int maxMessaggi) {
   char cmgl[CMGL_DIM];
 
   do {
+    Serial.println("| Ricerca numero messaggio...");
     lineaValida = cercaStringaDaRisposta("+CMGL:", "OK", cmgl, CMGL_DIM);
 
     // Mock
@@ -323,15 +324,15 @@ unsigned int leggiSMS(struct sms *messaggi, unsigned int maxMessaggi) {
     //lineaValida=true;
 
     if (lineaValida) {
-      Serial.println("| Lettura numero messaggio");
       int id;
       char stato[11];
-      int n = sscanf(cmgl, "+CMGL: %d,%s[^,],\"%14[^\"]\",%*s", &id, stato, messaggi[i].numero);
+      int n = sscanf(cmgl, "+CMGL: %d,%[^,]s,\"%[^\"]s\",%*s", &id, stato, messaggi[i].numero);
+      Serial.println("| Lettura numero messaggio terminata");
       Serial.println(n);
       Serial.println(stato);
       Serial.println(messaggi[i].numero);
 
-      Serial.println("| Lettura contenuto messaggio");
+      Serial.println("| Lettura contenuto messaggio...");
       unsigned int j = 0;
       do {
         messaggi[i].payload[j] = (char)GSMSerial.read();
@@ -349,10 +350,14 @@ unsigned int leggiSMS(struct sms *messaggi, unsigned int maxMessaggi) {
       );
 
       messaggi[i].payload[j] = '\0';
+      Serial.println("| Lettura contenuto messaggio terminata");
       i++;
     }
 
   } while (lineaValida && i < maxMessaggi);
+  Serial.print("| Completato lettura ");
+  Serial.print(i);
+  Serial.println(" messaggi");
   return i;
 
   // Mock
