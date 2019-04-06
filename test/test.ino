@@ -32,11 +32,15 @@
 
 #define PIN_SIM 7975 // Pin della sim
 
-//#define DESTINATARIO "+393471840366"
-#define DESTINATARIO "+393490507236"
+#define DESTINATARIO "+393471840366"
+//#define DESTINATARIO "+393490507236"
 
 struct posizione {
   double latitudine, longitudine;
+};
+
+struct sms {
+  char numero[15], payload[160];
 };
 
 void setup() {
@@ -52,6 +56,7 @@ void setup() {
   Serial.println("| 3 --> Stampa qualità GSM");
   Serial.println("| 4 --> Invia SMS");
   Serial.println("| 5 --> Leggi SMS");
+  Serial.println("| / --> Stampa SMS");
   Serial.println("| 6 --> Esegui chiamata");
   Serial.println("| 7 --> Avvia GPS");
   Serial.println("| = --> Stampa qualità GPS");
@@ -96,7 +101,11 @@ void loop() {
         break;
 
       case '5': // Leggi SMS
-        leggiSMS();
+        letturaSMS();
+        break;
+
+      case '/': // Stampa SMS
+        stampaSMS();
         break;
 
       case '6': // Chiamata
@@ -244,8 +253,8 @@ void inviaSMS(const char* numero, const char* payload) {
   inviaChar(0x1A); // EOF
 }
 
-// Leggi un SMS
-void leggiSMS(){
+// Stampa gli SMS
+void stampaSMS() {
   // https://www.developershome.com/sms/readSmsByAtCommands.asp
   // https://www.developershome.com/sms/cmgrCommand.asp
   // Protocollo:
@@ -257,7 +266,41 @@ void leggiSMS(){
   // AT+CMGR=3
 
   inviaStringaStampaRisposte("AT+CMGF=1");
-  inviaStringaStampaRisposte("AT+CNMI=1,2,0,0,0");
+  inviaStringaStampaRisposte("AT+CMGL=\"REC UNREAD\"");
+}
+
+void letturaSMS() {
+#define MAX_MESSAGGI 10
+  struct sms messaggi[MAX_MESSAGGI];
+  unsigned int num = leggiSMS(messaggi, MAX_MESSAGGI);
+  for (int  i = 0; i < num; i++) {
+    Serial.print("| ");
+    Serial.print(messaggi[i].numero);
+    Serial.print(" ha scritto: ");
+    Serial.println(messaggi[i].payload);
+  }
+}
+
+// Leggi gli SMS
+// Ritorna il numero di messaggi letti (<= maxMessaggi)
+unsigned int leggiSMS(struct sms *messaggi, unsigned int maxMessaggi) {
+  inviaStringaStampaRisposte("AT+CMGF=1");
+  inviaStringa("AT+CMGL=\"REC UNREAD\"");
+  delay(100);
+
+  //unsigned int i = 0;
+  //boolean lineaValida = false;
+  //do {
+
+  //} while (lineaValida && i < maxMessaggi);
+  //return i;
+
+  //Mock
+  sprintf(messaggi[0].numero, DESTINATARIO);
+  sprintf(messaggi[0].payload, "AaBbCc");
+  sprintf(messaggi[1].numero, DESTINATARIO);
+  sprintf(messaggi[1].payload, "DdEeFf");
+  return 2;
 }
 
 // Chiamata vocale, usando il jack audio della shield
@@ -340,7 +383,7 @@ boolean getPosizione(struct posizione* p) {
 void inviaPosizione(const char* numero) {
   struct posizione p;
   Serial.println("| Invio posizione...");
-  #define STR_DIM 40
+#define STR_DIM 40
   char lat[12], lon[12], str[STR_DIM];
   if (getPosizione(&p)) {
     dtostrf(p.latitudine, 11, 8, lat);
