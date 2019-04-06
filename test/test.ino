@@ -346,6 +346,6 @@ void inviaPosizione(const char* numero) {
     dtostrf(p.longitudine, 11, 8, lon);
     //snprintf(str, 40, "LAT %s - LON %s", lat, lon);
     snprintf(str, 40, "%s,%s", lat, lon);
-    inviaSMS(DESTINATARIO, str);
+    inviaSMS(numero, str);
   }
 }
