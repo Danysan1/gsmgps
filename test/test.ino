@@ -305,12 +305,17 @@ unsigned int leggiSMS(struct sms *messaggi, unsigned int maxMessaggi) {
     char cmgl[CMGL_DIM];
     cercaStringaDaRisposta("+CMGL:", cmgl, CMGL_DIM);
 
+    // Mock
+    //cmgl="+CMGL: 10,\"REC UNREAD\",\"+393471840366\",\"\",\"19/04/06,11:12:13+08\""
+
+    Serial.println(cmgl);
+
     // TODO
 
   } while (lineaValida && i < maxMessaggi);
   return i;
 
-  //Mock
+  // Mock
   //sprintf(messaggi[0].numero, DESTINATARIO);
   //sprintf(messaggi[0].payload, "AaBbCc");
   //sprintf(messaggi[1].numero, DESTINATARIO);
@@ -401,7 +406,7 @@ void inviaPosizione(const char* numero) {
     dtostrf(p.latitudine, 11, 8, lat);
     dtostrf(p.longitudine, 11, 8, lon);
     //snprintf(str, STR_DIM, "LAT %s - LON %s", lat, lon);
-    snprintf(str, STR_DIM, "Latitudine: %s\rLongitudine: %s\rhttps://www.google.com/maps/@?api=1&map_action=map&center=%s,%s", lat, lon, lat, lon);
+    snprintf(str, STR_DIM, "Latitudine: %s\rLongitudine: %s\rURL: https://www.google.com/maps/search/?api=1&query=%s,%s", lat, lon, lat, lon);
     inviaSMS(numero, str);
   }
 }
