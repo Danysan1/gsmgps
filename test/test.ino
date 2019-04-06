@@ -326,7 +326,7 @@ unsigned int leggiSMS(struct sms *messaggi, unsigned int maxMessaggi) {
     if (lineaValida) {
       int id;
       char stato[11];
-      int n = sscanf(cmgl, "+CMGL: %d,%[^,]s,\"%[^\"]s\",%*s", &id, stato, messaggi[i].numero);
+      int n = sscanf(cmgl, "+CMGL: %d,%[^,],\"%[^\"]\",%*", &id, stato, messaggi[i].numero);
       Serial.println("| Lettura numero messaggio terminata");
       Serial.println(n);
       Serial.println(stato);
