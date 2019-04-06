@@ -281,6 +281,16 @@ void letturaSMS() {
   }
 }
 
+void cercaStringaDaRisposta(const char* ricerca, char* output, unsigned int maxDim) {
+  String s;
+  do {
+    s = GSMSerial.readStringUntil('\r');
+    s.trim();
+    Serial.println(s);
+  } while (!s.startsWith(ricerca));
+  snprintf(output, maxDim, s.c_str());
+}
+
 // Leggi gli SMS
 // Ritorna il numero di messaggi letti (<= maxMessaggi)
 unsigned int leggiSMS(struct sms *messaggi, unsigned int maxMessaggi) {
@@ -288,19 +298,24 @@ unsigned int leggiSMS(struct sms *messaggi, unsigned int maxMessaggi) {
   inviaStringa("AT+CMGL=\"REC UNREAD\"");
   delay(100);
 
-  //unsigned int i = 0;
-  //boolean lineaValida = false;
-  //do {
+  unsigned int i = 0;
+  boolean lineaValida = false;
+  do {
+#define CMGL_DIM 100
+    char cmgl[CMGL_DIM];
+    cercaStringaDaRisposta("+CMGL:", cmgl, CMGL_DIM);
 
-  //} while (lineaValida && i < maxMessaggi);
-  //return i;
+    // TODO
+
+  } while (lineaValida && i < maxMessaggi);
+  return i;
 
   //Mock
-  sprintf(messaggi[0].numero, DESTINATARIO);
-  sprintf(messaggi[0].payload, "AaBbCc");
-  sprintf(messaggi[1].numero, DESTINATARIO);
-  sprintf(messaggi[1].payload, "DdEeFf");
-  return 2;
+  //sprintf(messaggi[0].numero, DESTINATARIO);
+  //sprintf(messaggi[0].payload, "AaBbCc");
+  //sprintf(messaggi[1].numero, DESTINATARIO);
+  //sprintf(messaggi[1].payload, "DdEeFf");
+  //return 2;
 }
 
 // Chiamata vocale, usando il jack audio della shield
