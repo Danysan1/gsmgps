@@ -340,12 +340,13 @@ boolean getPosizione(struct posizione* p) {
 void inviaPosizione(const char* numero) {
   struct posizione p;
   Serial.println("| Invio posizione...");
-  char lat[12], lon[12], str[40];
+  #define STR_DIM 40
+  char lat[12], lon[12], str[STR_DIM];
   if (getPosizione(&p)) {
     dtostrf(p.latitudine, 11, 8, lat);
     dtostrf(p.longitudine, 11, 8, lon);
-    //snprintf(str, 40, "LAT %s - LON %s", lat, lon);
-    snprintf(str, 40, "%s,%s", lat, lon);
+    //snprintf(str, STR_DIM, "LAT %s - LON %s", lat, lon);
+    snprintf(str, STR_DIM, "%s,%s", lat, lon);
     inviaSMS(numero, str);
   }
 }
