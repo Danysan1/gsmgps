@@ -366,21 +366,18 @@ boolean getPosizione(struct posizione* p) {
   inviaStringa("AT+CGPSINF=0");
   delay(100);
 
-  const char* res;
-  String s;
-  do {
-    s = GSMSerial.readStringUntil('\r');
-    s.trim();
-    Serial.println(s);
-  } while (!s.startsWith("+CGPSINF:"));
-  res = s.c_str();
+#define CGPSINF_DIM 100
+  char cgpsinf[CGPSINF_DIM];
+  cercaStringaDaRisposta("+CGPSINF:",cgpsinf,CGPSINF_DIM);
+
+  // Mock
   //res = "+CGPSINF: 0,2234.931817,11357.122485, 92.461185,20141031041141.000, 88,12,0.000000,0.000000"; // test, riumuovere quando funzionerà la board
 
   // https://cdn-shop.adafruit.com/datasheets/SIM808_GPS_Application_Note_V1.00.pdf#page=8
   // https://m2msupport.net/m2msupport/atcgpsinf-get-current-gps-location-info/
   // http://wiki.seeedstudio.com/Mini_GSM_GPRS_GPS_Breakout_SIM808/#get-location-with-gps
   char lat[12], lon[12];
-  boolean ok = 2 == sscanf(res, "+CGPSINF: %*d,%11[^,],%11[^,],%*s", &lat, &lon);
+  boolean ok = 2 == sscanf(cgpsinf, "+CGPSINF: %*d,%11[^,],%11[^,],%*s", &lat, &lon);
   if (ok) {
     //Serial.println(lat);
     //Serial.println(lon);
