@@ -40,7 +40,9 @@ struct posizione {
 };
 
 struct sms {
-  char numero[15], payload[160];
+#define SMS_NUMERO_DIM 15
+#define SMS_PAYLOAD_DIM 160
+  char numero[SMS_NUMERO_DIM], payload[SMS_PAYLOAD_DIM];
 };
 
 void setup() {
@@ -273,22 +275,32 @@ void letturaSMS() {
 #define MAX_MESSAGGI 10
   struct sms messaggi[MAX_MESSAGGI];
   unsigned int num = leggiSMS(messaggi, MAX_MESSAGGI);
-  for (int  i = 0; i < num; i++) {
-    Serial.print("| ");
-    Serial.print(messaggi[i].numero);
-    Serial.print(" ha scritto: ");
-    Serial.println(messaggi[i].payload);
+  if (num == 0) {
+    Serial.println("| Nessun nuovo messaggio");
+  } else {
+    for (int  i = 0; i < num; i++) {
+      Serial.print("| ");
+      Serial.print(messaggi[i].numero);
+      Serial.print(" ha scritto: ");
+      Serial.println(messaggi[i].payload);
+    }
   }
 }
 
-void cercaStringaDaRisposta(const char* ricerca, char* output, unsigned int maxDim) {
+// Attendi una stringa che inizi con il contenuto di "ricerca" (ritorna true)
+// Esci se arriva una strigna uguale al contenuto di "stopper" (ritorna false)
+boolean cercaStringaDaRisposta(const char* ricerca, const char *stopper, char* output, unsigned int maxDim) {
   String s;
+  char* c_str;
   do {
-    s = GSMSerial.readStringUntil('\r');
+    s = GSMSerial.readStringUntil('\n');
     s.trim();
     Serial.println(s);
+    if (stopper != NULL && s.equals(stopper))
+      return false;
   } while (!s.startsWith(ricerca));
   snprintf(output, maxDim, s.c_str());
+  return true;
 }
 
 // Leggi gli SMS
@@ -300,17 +312,45 @@ unsigned int leggiSMS(struct sms *messaggi, unsigned int maxMessaggi) {
 
   unsigned int i = 0;
   boolean lineaValida = false;
-  do {
 #define CMGL_DIM 100
-    char cmgl[CMGL_DIM];
-    cercaStringaDaRisposta("+CMGL:", cmgl, CMGL_DIM);
+  char cmgl[CMGL_DIM];
+
+  do {
+    lineaValida = cercaStringaDaRisposta("+CMGL:", "OK", cmgl, CMGL_DIM);
 
     // Mock
     //cmgl="+CMGL: 10,\"REC UNREAD\",\"+393471840366\",\"\",\"19/04/06,11:12:13+08\""
+    //lineaValida=true;
 
-    Serial.println(cmgl);
+    if (lineaValida) {
+      Serial.println("| Lettura numero messaggio");
+      int id;
+      char stato[11];
+      int n = sscanf(cmgl, "+CMGL: %d,%s[^,],\"%14[^\"]\",%*s", &id, stato, messaggi[i].numero);
+      Serial.println(n);
+      Serial.println(stato);
+      Serial.println(messaggi[i].numero);
 
-    // TODO
+      Serial.println("| Lettura contenuto messaggio");
+      unsigned int j = 0;
+      do {
+        messaggi[i].payload[j] = (char)GSMSerial.read();
+        stampaChar(messaggi[i].payload[j]);
+        j++;
+      } while (
+        j < SMS_PAYLOAD_DIM - 1 && (
+          j < 3 || (
+            messaggi[i].payload[j - 3] == '\n' &&
+            messaggi[i].payload[j - 2] == '\r' &&
+            messaggi[i].payload[j - 1] == '\n' &&
+            messaggi[i].payload[j] == '\r'
+          )
+        )
+      );
+
+      messaggi[i].payload[j] = '\0';
+      i++;
+    }
 
   } while (lineaValida && i < maxMessaggi);
   return i;
@@ -373,7 +413,7 @@ boolean getPosizione(struct posizione* p) {
 
 #define CGPSINF_DIM 100
   char cgpsinf[CGPSINF_DIM];
-  cercaStringaDaRisposta("+CGPSINF:", cgpsinf, CGPSINF_DIM);
+  cercaStringaDaRisposta("+CGPSINF:", "OK", cgpsinf, CGPSINF_DIM);
 
   // Mock
   //res = "+CGPSINF: 0,2234.931817,11357.122485, 92.461185,20141031041141.000, 88,12,0.000000,0.000000"; // test, riumuovere quando funzionerà la board
@@ -386,6 +426,8 @@ boolean getPosizione(struct posizione* p) {
   if (ok) {
     //Serial.println(lat);
     //Serial.println(lon);
+
+    // TODO : Correggere conversione, https://www.dfrobot.com/forum/viewtopic.php?p=7708&sid=1bc353ede2c4190a6636a48bbdd11a38#p7708
     p->latitudine = atof(lat) / 100;
     p->longitudine = atof(lon) / 100;
     Serial.println("| Posizione letta");
