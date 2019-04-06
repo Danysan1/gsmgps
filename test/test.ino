@@ -368,7 +368,7 @@ boolean getPosizione(struct posizione* p) {
 
 #define CGPSINF_DIM 100
   char cgpsinf[CGPSINF_DIM];
-  cercaStringaDaRisposta("+CGPSINF:",cgpsinf,CGPSINF_DIM);
+  cercaStringaDaRisposta("+CGPSINF:", cgpsinf, CGPSINF_DIM);
 
   // Mock
   //res = "+CGPSINF: 0,2234.931817,11357.122485, 92.461185,20141031041141.000, 88,12,0.000000,0.000000"; // test, riumuovere quando funzionerà la board
@@ -395,13 +395,13 @@ boolean getPosizione(struct posizione* p) {
 void inviaPosizione(const char* numero) {
   struct posizione p;
   Serial.println("| Invio posizione...");
-#define STR_DIM 40
+#define STR_DIM 140
   char lat[12], lon[12], str[STR_DIM];
   if (getPosizione(&p)) {
     dtostrf(p.latitudine, 11, 8, lat);
     dtostrf(p.longitudine, 11, 8, lon);
     //snprintf(str, STR_DIM, "LAT %s - LON %s", lat, lon);
-    snprintf(str, STR_DIM, "%s,%s", lat, lon);
+    snprintf(str, STR_DIM, "Latitudine: %s\rLongitudine: %s\rhttps://www.google.com/maps/@?api=1&map_action=map&center=%s,%s", lat, lon, lat, lon);
     inviaSMS(numero, str);
   }
 }
