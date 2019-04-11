@@ -59,6 +59,7 @@ void setup() {
   Serial.println("| 4 --> Invia SMS");
   Serial.println("| 5 --> Leggi SMS");
   Serial.println("| / --> Stampa SMS");
+  Serial.println("| ( --> Rimuovi SMS");
   Serial.println("| 6 --> Esegui chiamata");
   Serial.println("| 7 --> Avvia GPS");
   Serial.println("| = --> Stampa qualità GPS");
@@ -108,6 +109,10 @@ void loop() {
 
       case '/': // Stampa SMS
         stampaSMS();
+        break;
+
+      case '(': // Rimuovi SMS
+        rimuoviSMS();
         break;
 
       case '6': // Chiamata
@@ -384,6 +389,12 @@ struct sms leggiSMS(const char *rigaCMGL) {
   return messaggio;
 }
 
+void rimuoviSMS(){
+  Serial.println("| Rimozione SMS...");
+  inviaStringa("AT+CMGD=0,3");
+  Serial.println("| SMS rimossi");
+}
+
 // Chiamata vocale, usando il jack audio della shield
 void chiamata(const char* numero) {
   // Protocollo:
@@ -444,6 +455,8 @@ boolean getPosizione(struct posizione* p) {
   // http://wiki.seeedstudio.com/Mini_GSM_GPRS_GPS_Breakout_SIM808/#get-location-with-gps
   char lat[12], lon[12];
   boolean ok = 2 == sscanf(cgpsinf, "+CGPSINF: %*d,%11[^,],%11[^,],%*s", &lat, &lon);
+  //int laa, lab, lac, loa, lob, loc;
+  //boolean ok = 2 == sscanf(cgpsinf, "+CGPSINF: %*d,%2d%2d.%6d,%2d%2d.%6d,%*s", &laa, &lab, &lac, &loa, &lob, &loc);
   if (ok) {
     //Serial.println(lat);
     //Serial.println(lon);
