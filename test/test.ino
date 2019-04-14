@@ -391,7 +391,7 @@ struct sms leggiSMS(const char *rigaCMGL) {
 
 void rimuoviSMS(){
   Serial.println("| Rimozione SMS...");
-  inviaStringa("AT+CMGD=0,3");
+  inviaStringaStampaRisposte("AT+CMGD=0,3");
   Serial.println("| SMS rimossi");
 }
 
