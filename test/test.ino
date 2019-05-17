@@ -58,7 +58,8 @@ void setup() {
   Serial.println("| 3 --> Stampa qualità GSM");
   Serial.println("| 4 --> Invia SMS");
   Serial.println("| 5 --> Leggi SMS");
-  Serial.println("| / --> Stampa SMS");
+  Serial.println("| / --> Stampa SMS non letti");
+  Serial.println("| \\ --> Stampa tutti gli SMS");
   Serial.println("| ( --> Rimuovi SMS");
   Serial.println("| 6 --> Esegui chiamata");
   Serial.println("| 7 --> Avvia GPS");
@@ -107,7 +108,11 @@ void loop() {
         letturaSMS();
         break;
 
-      case '/': // Stampa SMS
+      case '/': // Stampa SMS non letti
+        stampaSmsNonLetti();
+        break;
+
+      case '\\': // Stampa tutti gli SMS
         stampaSMS();
         break;
 
@@ -260,8 +265,14 @@ void inviaSMS(const char* numero, const char* payload) {
   inviaChar(0x1A); // EOF
 }
 
-// Stampa gli SMS
+// Stampa tutti gli SMS
 void stampaSMS() {
+  inviaStringaStampaRisposte("AT+CMGF=1");
+  inviaStringaStampaRisposte("AT+CMGL=\"ALL\"");
+}
+
+// Stampa gli SMS non letti
+void stampaSmsNonLetti() {
   // https://www.developershome.com/sms/readSmsByAtCommands.asp
   // https://www.developershome.com/sms/cmgrCommand.asp
   // Protocollo:
@@ -390,8 +401,8 @@ struct sms leggiSMS(const char *rigaCMGL) {
 }
 
 void rimuoviSMS(){
-  Serial.println("| Rimozione SMS...");
-  inviaStringaStampaRisposte("AT+CMGD=0,3");
+  Serial.println("| Rimozione SMS letti...");
+  inviaStringaStampaRisposte("AT+CMGD=1,3");
   Serial.println("| SMS rimossi");
 }
 
