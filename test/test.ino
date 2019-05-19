@@ -57,7 +57,8 @@ void setup() {
   Serial.println("| % --> Configura PIN");
   Serial.println("| 3 --> Stampa qualità GSM");
   Serial.println("| 4 --> Invia SMS");
-  Serial.println("| 5 --> Leggi SMS");
+  Serial.println("| 5 --> Leggi SMS non letti");
+  Serial.println("| ! --> Leggi gli SMS già letti");
   Serial.println("| / --> Stampa SMS non letti");
   Serial.println("| \\ --> Stampa tutti gli SMS");
   Serial.println("| ( --> Rimuovi SMS");
@@ -104,8 +105,12 @@ void loop() {
         inviaSMS(DESTINATARIO, "Ciao mondo");
         break;
 
-      case '5': // Leggi SMS
-        letturaSMS();
+      case '5': // Leggi SMS non letti
+        letturaSMS(false);
+        break;
+
+      case '!': // Leggi SMS gia letti
+        letturaSMS(true);
         break;
 
       case '/': // Stampa SMS non letti
@@ -223,7 +228,7 @@ void verificaConnessione() {
 
 // Indica alla shield di rispondere verbosamente ai comandi
 void debugVerboso() {
-  Serial.println("| Impostazione debug veroboso...");
+  Serial.println("| Impostazione debug verboso...");
   inviaStringaStampaRisposte("AT+CMEE=2");
   //inviaStringaStampaRisposte("AT+CMEE?");
 }
@@ -287,10 +292,10 @@ void stampaSmsNonLetti() {
   inviaStringaStampaRisposte("AT+CMGL=\"REC UNREAD\"");
 }
 
-void letturaSMS() {
+void letturaSMS(boolean giaLetti) {
 #define MAX_MESSAGGI 10
   struct sms messaggi[MAX_MESSAGGI];
-  unsigned int num = leggiTuttiSMS(messaggi, MAX_MESSAGGI);
+  unsigned int num = leggiTuttiSMS(messaggi, MAX_MESSAGGI, giaLetti);
   if (num == 0) {
     Serial.println("| Nessun nuovo messaggio");
   } else {
@@ -323,9 +328,10 @@ boolean cercaStringaDaRisposta(const char* ricerca, const char *stopper, char* o
 
 // Leggi gli SMS
 // Ritorna il numero di messaggi letti (<= maxMessaggi)
-unsigned int leggiTuttiSMS(struct sms *messaggi, unsigned int maxMessaggi) {
+unsigned int leggiTuttiSMS(struct sms *messaggi, unsigned int maxMessaggi, boolean giaLetti) {
   inviaStringaStampaRisposte("AT+CMGF=1");
-  inviaStringa("AT+CMGL=\"REC UNREAD\"");
+  const char *invio = giaLetti ? "AT+CMGL=\"REC READ\"" : "AT+CMGL=\"REC UNREAD\"";
+  inviaStringa(invio);
   delay(100);
 
   unsigned int i = 0;
